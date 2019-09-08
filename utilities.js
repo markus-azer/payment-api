@@ -1,7 +1,6 @@
 const https = require('https');
 const Joi = require('@hapi/joi');
-
-const { empty } = global;
+const empty = require('is-empty');
 
 module.exports = {
   // eslint-disable-next-line object-shorthand
