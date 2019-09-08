@@ -1,0 +1,307 @@
+
+<html>
+  <head>
+    <title>Payment HTML</title>
+    <link href='https://maxcdn.bootstrapcdn.com/bootstrap/4.3.0/css/bootstrap.min.css' rel='stylesheet' type='text/css'>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.0/js/bootstrap.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.0.1/css/toastr.css" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.0.1/js/toastr.js"></script>
+    <style>
+      /* Uses Bootstrap stylesheets for styling, see linked CSS*/
+      body {
+        background-color: #fff;
+        padding: 15px;
+      }
+
+      .bootstrap-basic {
+        background: white;
+      }
+
+      /* Braintree Hosted Fields styling classes*/
+      .braintree-hosted-fields-focused {
+        color: #495057;
+        background-color: #fff;
+        border-color: #80bdff;
+        outline: 0;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+      }
+
+      .braintree-hosted-fields-focused.is-invalid {
+        border-color: #dc3545;
+        box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+      }
+    </style>
+  </head>
+  <body class="container">
+    <!-- Bootstrap inspired Braintree Hosted Fields example -->
+    <div class="bootstrap-basic">
+        <form class="needs-validation" novalidate="">
+      
+            <div class="row">
+              <div class="col-sm-6 mb-6" >
+                <label for="customerFullName">Customer Full Name</label>
+                <input type="text" class="form-control" name="customerFullName" id="customerFullName" required="true">
+                <div class="invalid-feedback">
+                  Customer Full Name is required
+                </div>
+              </div>
+              <div class="col-sm-3 mb-3" >
+                <label for="amount">Amount</label>
+                <input type="number" class="form-control" name="amount" id="amount" required="true">
+                <div class="invalid-feedback">
+                  Amount is required
+                </div>
+              </div>
+              <div class="col-sm-3 mb-3" >
+                <label for="currency">Currency</label>
+                <select class="form-control" name="currency" id="currency" required="true">
+                    <option>USD</option>
+                    <option>EUR</option>
+                    <option>THB</option>
+                    <option>HKD</option>
+                    <option>SGD</option>
+                    <option>AUD</option>
+                  </select>
+                <div class="invalid-feedback">
+                  Currency is required
+                </div>
+              </div>
+            </div>
+
+          <div class="row">
+            <div class="col-sm-12 mb-6" >
+              <label for="cc-name">Credit card holder name</label>
+              <input type="text" class="form-control" id="cc-name" placeholder="" required="true">
+              <small class="text-muted">Full name as displayed on card</small>
+              <div class="invalid-feedback">
+                Name on card is required
+              </div>
+            </div>
+          </div>
+      
+          <div class="row">
+            <div class="col-sm-12 mb-6">
+              <label for="cc-number">Credit card number</label>
+              <div class="form-control" id="cc-number"></div>
+              <div class="invalid-feedback">
+                Credit card number is required
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-sm-6 mb-6">
+              <label for="cc-expiration">Expiration</label>
+              <div class="form-control" id="cc-expiration"></div>
+              <div class="invalid-feedback">
+                Expiration date required
+              </div>
+            </div>
+            <div class="col-sm-6 mb-6">
+              <label for="cc-expiration">CVV</label>
+              <div class="form-control" id="cc-cvv"></div>
+              <div class="invalid-feedback">
+                Security code required
+              </div>
+            </div>
+          </div>
+      
+          <hr class="mb-4">
+          <div class="text-center">
+          <button class="btn btn-primary btn-lg" type="submit">Pay with <span id="card-brand">Card</span></button>
+          </div>
+        </form>
+      </div>
+      
+      <!-- Load the required client component. -->
+      <script src="https://js.braintreegateway.com/web/3.52.0/js/client.min.js"></script>
+    
+      <!-- Load Hosted Fields component. -->
+      <script src="https://js.braintreegateway.com/web/3.52.0/js/hosted-fields.min.js"></script>
+    <script>
+
+      $.ajax({
+        type: "GET",
+        url: "/checkout",
+        success: function (payload) {
+          //console.log(`Client Token ${payload.data}`);
+          var form = $('form');
+
+          braintree.client.create({
+            authorization: payload.data
+          }, function(err, clientInstance) {
+            if (err) {
+              console.error(err);
+              return;
+            }
+
+            braintree.hostedFields.create({
+              client: clientInstance,
+              styles: {
+                input: {
+                  // change input styles to match
+                  // bootstrap styles
+                  'font-size': '1rem',
+                  color: '#495057'
+                }
+              },
+              fields: {
+                number: {
+                  selector: '#cc-number',
+                  placeholder: '4111 1111 1111 1111'
+                },
+                cvv: {
+                  selector: '#cc-cvv',
+                  placeholder: '123'
+                },
+                expirationDate: {
+                  selector: '#cc-expiration',
+                  placeholder: 'MM / YY'
+                }
+              }
+            }, function(err, hostedFieldsInstance) {
+              if (err) {
+                console.error(err);
+                return;
+              }
+              function createInputChangeEventListener(element) {
+                return function () {
+                  validateInput(element);
+                }
+              }
+
+              function setValidityClasses(element, validity) {
+                if (validity) {
+                  element.removeClass('is-invalid');
+                  element.addClass('is-valid');  
+                } else {
+                  element.addClass('is-invalid');
+                  element.removeClass('is-valid');  
+                }    
+              }
+              
+              function validateInput(element) {
+                // very basic validation, if the
+                // fields are empty, mark them
+                // as invalid, if not, mark them
+                // as valid
+
+                if (!element.val().trim()) {
+                  setValidityClasses(element, false);
+
+                  return false;
+                }
+
+                setValidityClasses(element, true);
+
+                return true;
+              }
+
+              var ccName = $('#cc-name');
+
+              ccName.on('change', function () {
+                validateInput(ccName);
+              });
+
+
+              hostedFieldsInstance.on('validityChange', function(event) {
+                var field = event.fields[event.emittedBy];
+
+                // Remove any previously applied error or warning classes
+                $(field.container).removeClass('is-valid');
+                $(field.container).removeClass('is-invalid');
+
+                if (field.isValid) {
+                  $(field.container).addClass('is-valid');
+                } else if (field.isPotentiallyValid) {
+                  // skip adding classes if the field is
+                  // not valid, but is potentially valid
+                } else {
+                  $(field.container).addClass('is-invalid');
+                }
+              });
+
+              hostedFieldsInstance.on('cardTypeChange', function(event) {
+                var cardBrand = $('#card-brand');
+                var cvvLabel = $('[for="cc-cvv"]');
+
+                if (event.cards.length === 1) {
+                  var card = event.cards[0];
+
+                  // change pay button to specify the type of card
+                  // being used
+                  cardBrand.text(card.niceType);
+                  // update the security code label
+                  cvvLabel.text(card.code.name);
+                } else {
+                  // reset to defaults
+                  cardBrand.text('Card');
+                  cvvLabel.text('CVV');
+                }
+              });
+
+              form.submit(function(event) {
+                event.preventDefault();
+
+                const form = $(this);
+                var formIsInvalid = false;
+                var state = hostedFieldsInstance.getState();
+
+                // perform validations on the non-Hosted Fields
+                // inputs
+                if (!validateInput($('#cc-name')) || !validateInput($('#currency')) || !validateInput($('#amount')) || !validateInput($('#customerFullName'))) {
+                  formIsInvalid = true;
+                }
+
+                // Loop through the Hosted Fields and check
+                // for validity, apply the is-invalid class
+                // to the field container if invalid
+                Object.keys(state.fields).forEach(function(field) {
+                  if (!state.fields[field].isValid) {
+                    $(state.fields[field].container).addClass('is-invalid');
+                    formIsInvalid = true;
+                  }
+                });
+
+                if (formIsInvalid) {
+                  // skip tokenization request if any fields are invalid
+                  return;
+                }
+
+                hostedFieldsInstance.tokenize({
+                  // include the cardholderName in the tokenization
+                  // request
+                  cardholderName: $('#cc-name').val()
+                }, function(err, payload) {
+                  if (err) {
+                    console.error(err);
+                    return;
+                  }
+
+                  // console.log("=>>>>>>>>>>>>>>", payload);
+                  $.ajax({
+                    type: "POST",
+                    url: "/checkout",
+                    data: form.serialize() + `&nonce=${payload.nonce}`,
+                    success: function (payload) {
+                      toastr.success("Updated Successfully");
+                    },
+                    error: function (request, status, error) {
+                      toastr.error(request.responseText);
+                    }
+                  });
+
+                });
+              });
+            });
+          });
+          
+        },
+        error: function (request, status, error) {
+          toastr.error(`Error getting client Token ${request.responseText}`);
+        }
+      });
+
+    </script>
+  </body>
+</html>

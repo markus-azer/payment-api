@@ -1,0 +1,43 @@
+{
+  "name": "payment-api",
+  "version": "1.0.0",
+  "description": "Payment Api",
+  "main": "app.js",
+  "scripts": {
+    "start": "NODE_ENV=production node app.js",
+    "dev": "nodemon app.js",
+    "lint": "eslint .",
+    "test": "npm run lint && mocha"
+  },
+  "keywords": [
+    "payment"
+  ],
+  "author": "Markus Azer",
+  "license": "ISC",
+  "dependencies": {
+    "@hapi/joi": "^15.1.0",
+    "bluebird": "^3.5.5",
+    "braintree": "^2.19.0",
+    "express": "^4.17.1",
+    "helmet": "^3.18.0",
+    "is-empty": "^1.2.0",
+    "moment": "^2.24.0",
+    "moment-timezone": "^0.5.26",
+    "mongoose": "^5.6.0",
+    "morgan": "^1.9.1",
+    "swagger-jsdoc": "^3.3.0",
+    "swagger-ui-express": "^4.0.7"
+  },
+  "devDependencies": {
+    "eslint": "^6.2.2",
+    "eslint-config-airbnb": "^17.1.1",
+    "eslint-plugin-import": "^2.18.2",
+    "eslint-plugin-jsx-a11y": "^6.2.3",
+    "eslint-plugin-react": "^7.12.4",
+    "eslint-config-braintree": "^4.0.0",
+    "nodemon": "^1.19.1",
+    "chai": "^4.2.0",
+    "mocha": "^6.2.0",
+    "supertest": "^4.0.2"
+  }
+}
